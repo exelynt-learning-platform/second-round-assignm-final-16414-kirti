@@ -1,13 +1,8 @@
 package com.Ecommerce.Controller;
 
-
 import java.util.List;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.Ecommerce.Model.Cart;
 import com.Ecommerce.Service.CartService;
@@ -22,16 +17,16 @@ public class CartController {
         this.service = service;
     }
 
+    
     @PostMapping("/add")
     public Cart addToCart(@RequestParam Long userId,
                           @RequestParam Long productId,
-                          @RequestParam int qty) {
-
-        return service.addToCart(userId, productId, qty);
+                          @RequestParam Integer quantity) {
+        return service.addToCart(userId, productId, quantity);
     }
 
-    @GetMapping
-    public List<Cart> getCart(@RequestParam Long userId) {
+    @GetMapping("/{userId}")
+    public List<Cart> getUserCart(@PathVariable Long userId) {
         return service.getUserCart(userId);
     }
 }
