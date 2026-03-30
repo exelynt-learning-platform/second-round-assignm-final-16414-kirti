@@ -24,7 +24,6 @@ public class CartService {
     @Autowired
     private UserRepository userRepo;
 
-    
     public Cart addToCart(Long userId, Long productId, Integer quantity) {
 
         if (quantity == null || quantity <= 0) {
