@@ -11,47 +11,36 @@ import com.Ecommerce.Repository.CartRepository;
 import com.Ecommerce.Repository.ProductRepository;
 import com.Ecommerce.Repository.UserRepository;
 
-
 @Service
 public class CartService {
 
-    private final CartRepository cartRepo;
-    private final ProductRepository productRepo;
-    private final UserRepository userRepo;
+    @Autowired
+    private CartRepository cartRepo;
 
-    public CartService(CartRepository cartRepo,
-                       ProductRepository productRepo,
-                       UserRepository userRepo) {
-        this.cartRepo = cartRepo;
-        this.productRepo = productRepo;
-        this.userRepo = userRepo;
-    }
+    @Autowired
+    private ProductRepository productRepo;
 
-    public Cart addToCart(Long userId, Long productId, int qty) {
+    public Cart addToCart(Long userId, Long productId, int quantity) {
 
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+        
         Product product = productRepo.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        if (product.getStockQuantity() < qty) {
-            throw new RuntimeException("Out of stock");
+
+        Cart existingItem = cartRepo.findByUserIdAndProductId(userId, productId);
+
+        if (existingItem != null) {
+            
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            return cartRepo.save(existingItem);
         }
 
+        
         Cart cart = new Cart();
-        cart.setUser(user);
+        cart.setUserId(userId);
         cart.setProduct(product);
-        cart.setQuantity(qty);
+        cart.setQuantity(quantity);
 
         return cartRepo.save(cart);
     }
-
-    public List<Cart> getUserCart(Long userId) {
-
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return cartRepo.findByUser(user);
-    }
-}  
+}
