@@ -1,51 +1,49 @@
 package com.Ecommerce.Service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.Ecommerce.Model.Cart;
 import com.Ecommerce.Model.Product;
-import com.Ecommerce.Model.User;
-import com.Ecommerce.Repository.CartRepository;
 import com.Ecommerce.Repository.ProductRepository;
-import com.Ecommerce.Repository.UserRepository;
 
 @Service
-public class CartService {
-
-    @Autowired
-    private CartRepository cartRepo;
+public class ProductService {
 
     @Autowired
     private ProductRepository productRepo;
 
-    @Autowired
-    private UserRepository userRepo;
+    
+    public Product addProduct(Product product) {
+        return productRepo.save(product);
+    }
 
-    public Cart addToCart(Long userId, Long productId, int quantity) {
-
-        
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        
-        Product product = productRepo.findById(productId)
+    
+    public List<Product> getAllProducts() {
+        return productRepo.findAll();
+    }
+    public Product getProductById(Long id) {
+        return productRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+    }
 
-        
-        Cart existing = cartRepo.findByUser_IdAndProduct_Id(userId, productId);
 
-        if (existing != null) {
-            existing.setQuantity(existing.getQuantity() + quantity);
-            return cartRepo.save(existing);
+    public Product updateProduct(Long id, Product updatedProduct) {
+        Product product = getProductById(id);
+
+        product.setName(updatedProduct.getName());
+        product.setPrice(updatedProduct.getPrice());
+        product.setStockQuantity(updatedProduct.getStockQuantity());
+
+        return productRepo.save(product);
+    }
+
+    
+    public void deleteProduct(Long id) {
+        if (!productRepo.existsById(id)) {
+            throw new RuntimeException("Product not found");
         }
-
-        
-        Cart cart = new Cart();
-        cart.setUser(user);         
-        cart.setProduct(product);  
-        cart.setQuantity(quantity);
-
-        return cartRepo.save(cart);
+        productRepo.deleteById(id);
     }
 }
