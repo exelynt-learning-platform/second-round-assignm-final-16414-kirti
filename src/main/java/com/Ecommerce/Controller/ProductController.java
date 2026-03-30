@@ -17,40 +17,38 @@ import com.Ecommerce.Service.ProductService;
 
 @RestController
 @RequestMapping("/products")
-
 public class ProductController {
-	
-	private final ProductService service;
-	
-	public ProductController(ProductService service) {
-		this.service=service;
-   
 
+    private final ProductService service;
+
+    public ProductController(ProductService service) {
+        this.service = service;
+    }
+
+    @PostMapping
+    public Product add(@RequestBody Product p) {
+        return service.addProduct(p);
+    }
+
+    @GetMapping
+    public List<Product> getAll() {
+        return service.getAllProducts();
+    }
+
+    @GetMapping("/{id}")
+    public Product getById(@PathVariable Long id) {
+        return service.getProductById(id);
+    }
+
+    @PutMapping("/{id}")
+    public Product update(@PathVariable Long id, @RequestBody Product p) {
+        return service.updateProduct(id, p);
+    }
+
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable Long id) {
+        service.deleteProduct(id);
+        return "Deleted successfully";
+    }
 }
-
-	    @PostMapping
-	    public Product add(@RequestBody Product p) {
-	        return service.add(p);
-	    }
-
-	    @GetMapping
-	    public List<Product> getAll() {
-	        return service.getAll();
-	    }
-
-	    @GetMapping("/{id}")
-	    public Product get(@PathVariable Long id) {
-	        return service.getById(id);
-	    }
-	    
-	    @PutMapping("/{id}")
-	    public Product update(@PathVariable Long id, @RequestBody Product p) {
-	        return service.update(id, p);
-	    }
-
-	    @DeleteMapping("/{id}")
-	    public void delete(@PathVariable Long id) {
-	        service.delete(id);
-	    }
-	}
 
