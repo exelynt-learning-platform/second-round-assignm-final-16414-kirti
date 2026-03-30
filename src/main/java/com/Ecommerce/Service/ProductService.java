@@ -1,53 +1,51 @@
 package com.Ecommerce.Service;
 
-import java.util.List;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.Ecommerce.Model.Cart;
 import com.Ecommerce.Model.Product;
+import com.Ecommerce.Model.User;
+import com.Ecommerce.Repository.CartRepository;
 import com.Ecommerce.Repository.ProductRepository;
 import com.Ecommerce.Repository.UserRepository;
 
-
 @Service
+public class CartService {
 
-public class ProductService {
+    @Autowired
+    private CartRepository cartRepo;
 
+    @Autowired
+    private ProductRepository productRepo;
 
+    @Autowired
+    private UserRepository userRepo;
 
-	private final ProductRepository repo;
+    public Cart addToCart(Long userId, Long productId, int quantity) {
 
-	public ProductService(ProductRepository repo) {
-	    this.repo = repo;
-	}
+        
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-	    public Product add(Product p) {
-	        return repo.save(p);
-	    }
+        
+        Product product = productRepo.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
 
-	    public List<Product> getAll() {
-	        return repo.findAll();
-	    }
+        
+        Cart existing = cartRepo.findByUser_IdAndProduct_Id(userId, productId);
 
-	    public Product getById(Long id) {
-	        return repo.findById(id)
-	                .orElseThrow(() -> new RuntimeException("Not found"));
-	    }
-	    
-	    public Product update(Long id, Product p) {
-	        Product existing = getById(id);
+        if (existing != null) {
+            existing.setQuantity(existing.getQuantity() + quantity);
+            return cartRepo.save(existing);
+        }
 
-	        existing.setName(p.getName());
-	        existing.setPrice(p.getPrice());
-	        existing.setStockQuantity(p.getStockQuantity());
-	        existing.setDescription(p.getDescription());
-	        existing.setImageUrl(p.getImageUrl());
+        
+        Cart cart = new Cart();
+        cart.setUser(user);         
+        cart.setProduct(product);  
+        cart.setQuantity(quantity);
 
-	        return repo.save(existing);
-	    }
-
-	    public void delete(Long id) {
-	        repo.deleteById(id);
-	    }
-	}
-
+        return cartRepo.save(cart);
+    }
+}
