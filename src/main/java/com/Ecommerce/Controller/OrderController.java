@@ -22,17 +22,11 @@ public class OrderController {
         this.service = service;
         this.userRepo = userRepo;
     }
-
+@PostMapping("/create")
+public Order createOrder(@RequestBody User user) {
+    return service.createOrder(user);
+}
     
-    @PostMapping("/create")
-    public Order create(@RequestParam Long userId) {
-
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return service.createOrder(user);
-    }
-
    
     @PostMapping("/pay/{orderId}")
     public String pay(@PathVariable Long orderId,
