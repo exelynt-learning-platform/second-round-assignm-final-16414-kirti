@@ -9,5 +9,6 @@ import com.Ecommerce.Model.User;
 
 public interface CartRepository extends JpaRepository<Cart, Long> {
 	 List<Cart> findByUser(User user);
+ Cart findByUser_IdAndProduct_Id(Long userId, Long productId);
 
 }
