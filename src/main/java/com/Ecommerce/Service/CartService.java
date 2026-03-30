@@ -1,6 +1,6 @@
-
 package com.Ecommerce.Service;
 
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,38 +22,42 @@ public class CartService {
     private ProductRepository productRepo;
 
     @Autowired
-    private UserRepository userRepo; 
+    private UserRepository userRepo;
 
-    public Cart addToCart(Long userId, Long productId, int quantity) {
+    
+    public Cart addToCart(Long userId, Long productId, Integer quantity) {
 
-        
+        if (quantity == null || quantity <= 0) {
+            throw new RuntimeException("Invalid quantity");
+        }
+
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Product product = productRepo.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        
-        public List<Cart> getUserCart(Long userId) {
 
-    User user = userRepo.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+        Cart existing = cartRepo.findByUser_IdAndProduct_Id(userId, productId);
 
-    return cartRepo.findByUser(user);
-}
-
-        Cart existingItem = cartRepo.findByUser_IdAndProduct_Id(userId, productId);
-
-        if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + quantity);
-            return cartRepo.save(existingItem);
+        if (existing != null) {
+            existing.setQuantity(existing.getQuantity() + quantity);
+            return cartRepo.save(existing);
         }
 
-        
         Cart cart = new Cart();
-        cart.setUser(user);          
+        cart.setUser(user);
         cart.setProduct(product);
         cart.setQuantity(quantity);
 
         return cartRepo.save(cart);
+    }
+
+    
+    public List<Cart> getUserCart(Long userId) {
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return cartRepo.findByUser(user);
     }
 }
