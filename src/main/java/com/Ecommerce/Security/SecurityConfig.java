@@ -15,20 +15,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class SecurityConfig {
 
     @Autowired
-    private JwtFilter jwtFilter;   
+    private JwtFilter jwtFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-            .csrf().disable()
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**").permitAll()   
-                
-    .requestMatchers("/admin/**").hasAuthority("ROLE_ADMIN")
-.requestMatchers("/user/**").hasAuthority("ROLE_USER")
+                .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/admin/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/user/**").hasAuthority("ROLE_USER")
+                .anyRequest().authenticated() 
             )
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class); 
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
