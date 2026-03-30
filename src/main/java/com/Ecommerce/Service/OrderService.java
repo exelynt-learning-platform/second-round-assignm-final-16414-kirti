@@ -1,8 +1,6 @@
-
 package com.Ecommerce.Service;
 
 import java.util.ArrayList;
-
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -23,15 +21,19 @@ public class OrderService {
     private final CartRepository cartRepo;
     private final OrderRepository orderRepo;
     private final ProductRepository productRepo;
+    private final PaymentService paymentService;
 
     public OrderService(CartRepository cartRepo,
                         OrderRepository orderRepo,
-                        ProductRepository productRepo) {
+                        ProductRepository productRepo,
+                        PaymentService paymentService) {
         this.cartRepo = cartRepo;
         this.orderRepo = orderRepo;
         this.productRepo = productRepo;
+        this.paymentService = paymentService;
     }
 
+    
     @Transactional
     public Order createOrder(User user) {
 
@@ -56,9 +58,8 @@ public class OrderService {
                 throw new RuntimeException("Not enough stock for " + product.getName());
             }
 
-            // Reduce stock
+            
             product.setStockQuantity(product.getStockQuantity() - cart.getQuantity());
-            productRepo.save(product);
 
             OrderItem item = new OrderItem();
             item.setOrder(order);
@@ -70,16 +71,16 @@ public class OrderService {
             total += product.getPrice() * cart.getQuantity();
         }
 
-        order.setTotalPrice(total);
         order.setOrderItems(orderItems);
+        order.setTotalPrice(total);
 
         Order savedOrder = orderRepo.save(order);
 
-        
         cartRepo.deleteAll(cartItems);
 
         return savedOrder;
     }
+
 
     public List<Order> getOrders(User user) {
         return orderRepo.findByUser(user);
@@ -98,11 +99,12 @@ public class OrderService {
             throw new RuntimeException("Already paid");
         }
 
+    
+        String paymentId = paymentService.createPayment(order.getTotalPrice());
+
         order.setStatus("PAID");
         orderRepo.save(order);
 
-        return "Payment Successful (Simulated)";
+        return "Payment Successful. ID: " + paymentId;
     }
 }
-
-
