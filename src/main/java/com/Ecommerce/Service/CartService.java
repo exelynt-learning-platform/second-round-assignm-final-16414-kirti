@@ -32,6 +32,14 @@ public class CartService {
 
         Product product = productRepo.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        public List<Cart> getUserCart(Long userId) {
+
+    User user = userRepo.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    return cartRepo.findByUser(user);
+}
 
         Cart existingItem = cartRepo.findByUser_IdAndProduct_Id(userId, productId);
 
