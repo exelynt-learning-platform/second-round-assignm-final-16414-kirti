@@ -26,43 +26,57 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     private UserRepository userRepo;
-    
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
 
-        String path = request.getRequestURI();
+    @Override
+protected void doFilterInternal(HttpServletRequest request,
+                                HttpServletResponse response,
+                                FilterChain filterChain)
+        throws ServletException, IOException {
+
+    String path = request.getRequestURI();
+
+
+    if (path.startsWith("/auth/")) {
+        filterChain.doFilter(request, response);
+        return;
+    }
+
+    String header = request.getHeader("Authorization");
+
+    if (header != null && header.startsWith("Bearer ")) {
+
+        String token = header.substring(7);
 
         
-        if (path.startsWith("/auth/")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        if (jwtUtil.validateToken(token)) {
 
-        String header = request.getHeader("Authorization");
-        String token = null;
-        String email = null;
+            String email = jwtUtil.extractEmail(token);
 
-        if (header != null && header.startsWith("Bearer ")) {
-            token = header.substring(7);
-            email = jwtUtil.extractEmail(token);
-        }
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepo.findByEmail(email).orElse(null);
+                User user = userRepo.findByEmail(email).orElse(null);
 
-            if (user != null && jwtUtil.validateToken(token, email)) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                user,
-                                null,
-                                Collections.emptyList()
-                        );
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (user != null) {
+
+                
+                    SimpleGrantedAuthority authority =
+                            new SimpleGrantedAuthority("ROLE_" + user.getRole());
+
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    user,
+                                    null,
+                                    Collections.singletonList(authority)
+                            );
+
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
         }
+    }
+
+    filterChain.doFilter(request, response);
+}
 
         filterChain.doFilter(request, response);
     }
