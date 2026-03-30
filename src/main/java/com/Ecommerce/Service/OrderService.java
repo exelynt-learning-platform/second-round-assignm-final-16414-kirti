@@ -54,12 +54,14 @@ public class OrderService {
 
             Product product = cart.getProduct();
 
+            
             if (product.getStockQuantity() < cart.getQuantity()) {
-                throw new RuntimeException("Not enough stock for " + product.getName());
+                throw new RuntimeException("Insufficient stock for " + product.getName());
             }
 
             
             product.setStockQuantity(product.getStockQuantity() - cart.getQuantity());
+            productRepo.save(product);
 
             OrderItem item = new OrderItem();
             item.setOrder(order);
@@ -76,35 +78,39 @@ public class OrderService {
 
         Order savedOrder = orderRepo.save(order);
 
+        
         cartRepo.deleteAll(cartItems);
 
         return savedOrder;
     }
 
-
+    
     public List<Order> getOrders(User user) {
         return orderRepo.findByUser(user);
     }
 
+    
     public String pay(Long orderId, User user) {
 
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        
         if (!order.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Unauthorized");
+            throw new RuntimeException("Unauthorized access");
         }
 
         if ("PAID".equals(order.getStatus())) {
             throw new RuntimeException("Already paid");
         }
 
-    
+        
         String paymentId = paymentService.createPayment(order.getTotalPrice());
 
         order.setStatus("PAID");
         orderRepo.save(order);
 
-        return "Payment Successful. ID: " + paymentId;
+        
+        return "PAYMENT_SUCCESS:" + paymentId;
     }
 }
