@@ -2,16 +2,24 @@ package com.Ecommerce.Service;
 
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class PaymentService {
 
     public String createPayment(Double amount) {
 
         
-        if (amount <= 0) {
+        if (amount == null || amount <= 0) {
             throw new RuntimeException("Invalid payment amount");
         }
 
-        return "Payment initiated successfully for amount: " + amount;
+        
+        String paymentId = "PAY_" + UUID.randomUUID().toString();
+
+        
+        System.out.println("Payment processed: " + paymentId + " for amount: " + amount);
+
+        return paymentId;
     }
 }
