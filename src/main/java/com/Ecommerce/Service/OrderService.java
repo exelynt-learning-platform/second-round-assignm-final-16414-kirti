@@ -23,6 +23,9 @@ public class OrderService {
     private final ProductRepository productRepo;
     private final PaymentService paymentService;
 
+    private static final String STATUS_CREATED = "CREATED";
+    private static final String STATUS_PAID = "PAID";
+
     public OrderService(CartRepository cartRepo,
                         OrderRepository orderRepo,
                         ProductRepository productRepo,
@@ -33,8 +36,8 @@ public class OrderService {
         this.paymentService = paymentService;
     }
 
-    
-    @Transactional
+
+    @Transactional(rollbackFor = Exception.class)
     public Order createOrder(User user) {
 
         List<Cart> cartItems = cartRepo.findByUser(user);
@@ -43,74 +46,79 @@ public class OrderService {
             throw new RuntimeException("Cart is empty");
         }
 
+        for (Cart cart : cartItems) {
+            Product product = cart.getProduct();
+
+            if (product.getStockQuantity() < cart.getQuantity()) {
+                throw new RuntimeException("Insufficient stock for " + product.getName());
+            }
+        }
+
         Order order = new Order();
         order.setUser(user);
-        order.setStatus("CREATED");
+        order.setStatus(STATUS_CREATED);
 
         List<OrderItem> orderItems = new ArrayList<>();
         double total = 0;
 
-        for (Cart cart : cartItems) {
+        
+        synchronized (this) {
+            for (Cart cart : cartItems) {
 
-            Product product = cart.getProduct();
+                Product product = productRepo.findById(cart.getProduct().getId())
+                        .orElseThrow(() -> new RuntimeException("Product not found"));
 
-            
-            if (product.getStockQuantity() < cart.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for " + product.getName());
+                product.setStockQuantity(product.getStockQuantity() - cart.getQuantity());
+                productRepo.save(product);
+
+                OrderItem item = new OrderItem();
+                item.setOrder(order);
+                item.setProduct(product);
+                item.setQuantity(cart.getQuantity());
+
+                orderItems.add(item);
+
+                total += product.getPrice() * cart.getQuantity();
             }
-
-            
-            product.setStockQuantity(product.getStockQuantity() - cart.getQuantity());
-            productRepo.save(product);
-
-            OrderItem item = new OrderItem();
-            item.setOrder(order);
-            item.setProduct(product);
-            item.setQuantity(cart.getQuantity());
-
-            orderItems.add(item);
-
-            total += product.getPrice() * cart.getQuantity();
         }
 
         order.setOrderItems(orderItems);
         order.setTotalPrice(total);
 
-        Order savedOrder = orderRepo.save(order);
-
-        
-        cartRepo.deleteAll(cartItems);
-
-        return savedOrder;
+        return orderRepo.save(order);
     }
 
-    
+
     public List<Order> getOrders(User user) {
         return orderRepo.findByUser(user);
     }
 
     
+    @Transactional(rollbackFor = Exception.class)
     public String pay(Long orderId, User user) {
 
         Order order = orderRepo.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        
-        if (!order.getUser().getId().equals(user.getId())) {
+    
+        if (order.getUser() == null ||
+            !order.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("Unauthorized access");
         }
 
-        if ("PAID".equals(order.getStatus())) {
-            throw new RuntimeException("Already paid");
+        if (STATUS_PAID.equals(order.getStatus())) {
+            throw new RuntimeException("Order already paid");
         }
 
-        
         String paymentId = paymentService.createPayment(order.getTotalPrice());
 
-        order.setStatus("PAID");
+        order.setStatus(STATUS_PAID);
         orderRepo.save(order);
 
         
+        List<Cart> cartItems = cartRepo.findByUser(user);
+        cartRepo.deleteAll(cartItems);
+
         return "PAYMENT_SUCCESS:" + paymentId;
     }
 }
