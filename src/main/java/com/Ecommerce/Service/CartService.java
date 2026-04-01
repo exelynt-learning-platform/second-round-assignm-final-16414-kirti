@@ -2,7 +2,6 @@ package com.Ecommerce.Service;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.Ecommerce.Model.Cart;
@@ -10,33 +9,35 @@ import com.Ecommerce.Model.Product;
 import com.Ecommerce.Model.User;
 import com.Ecommerce.Repository.CartRepository;
 import com.Ecommerce.Repository.ProductRepository;
-import com.Ecommerce.Repository.UserRepository;
 
 @Service
 public class CartService {
 
-    @Autowired
-    private CartRepository cartRepo;
+    private final CartRepository cartRepo;
+    private final ProductRepository productRepo;
 
-    @Autowired
-    private ProductRepository productRepo;
+    public CartService(CartRepository cartRepo,
+                       ProductRepository productRepo) {
+        this.cartRepo = cartRepo;
+        this.productRepo = productRepo;
+    }
 
-    @Autowired
-    private UserRepository userRepo;
-
-    public Cart addToCart(Long userId, Long productId, Integer quantity) {
+    
+    public Cart addToCart(User user, Long productId, Integer quantity) {
 
         if (quantity == null || quantity <= 0) {
             throw new RuntimeException("Invalid quantity");
         }
 
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
         Product product = productRepo.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        Cart existing = cartRepo.findByUser_IdAndProduct_Id(userId, productId);
+    
+        if (product.getStockQuantity() < quantity) {
+            throw new RuntimeException("Not enough stock");
+        }
+
+        Cart existing = cartRepo.findByUser_IdAndProduct_Id(user.getId(), productId);
 
         if (existing != null) {
             existing.setQuantity(existing.getQuantity() + quantity);
@@ -52,11 +53,7 @@ public class CartService {
     }
 
     
-    public List<Cart> getUserCart(Long userId) {
-
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+    public List<Cart> getUserCart(User user) {
         return cartRepo.findByUser(user);
     }
 }
