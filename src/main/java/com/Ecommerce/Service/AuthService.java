@@ -1,55 +1,18 @@
 package com.Ecommerce.Service;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import com.Ecommerce.Model.User;
-import com.Ecommerce.Repository.UserRepository;
-import com.Ecommerce.Security.JwtUtil;
-
+import java.util.UUID;
 
 @Service
-public class AuthService {
-	
-	  private final UserRepository userRepository;
-	    private final PasswordEncoder encoder;
-	    private final JwtUtil jwtUtil;
-	
-	public AuthService(UserRepository userRepository,
-            PasswordEncoder encoder,
-            JwtUtil jwtUtil) {
-this.userRepository = userRepository;
-this.encoder = encoder;
-this.jwtUtil = jwtUtil;
-}
+public class PaymentService {
 
-  
+    public String createPayment(Double amount) {
 
-    public String register(User user) {
-
-        if(userRepository.findByEmail(user.getEmail()).isPresent()){
-            throw new RuntimeException("Email already exists");
+        if (amount == null || amount <= 0) {
+            throw new RuntimeException("Invalid payment amount");
         }
 
-        user.setPassword(encoder.encode(user.getPassword()));
-        user.setRole("ROLE_USER");
-
-        userRepository.save(user);
-
-        return "User Registered Successfully";
-    }
-
-    public String login(String email, String password) {
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (!encoder.matches(password, user.getPassword())) {
-            throw new RuntimeException("Invalid password");
-        }
-
-        return  jwtUtil.generateToken(email);
         
-        
+        return "PAY_" + UUID.randomUUID().toString();
     }
 }
