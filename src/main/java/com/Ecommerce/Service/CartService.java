@@ -22,7 +22,6 @@ public class CartService {
         this.productRepo = productRepo;
     }
 
-    
     public Cart addToCart(User user, Long productId, Integer quantity) {
 
         if (quantity == null || quantity <= 0) {
@@ -32,12 +31,7 @@ public class CartService {
         Product product = productRepo.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-    
-        if (product.getStockQuantity() < quantity) {
-            throw new RuntimeException("Not enough stock");
-        }
-
-        Cart existing = cartRepo.findByUser_IdAndProduct_Id(user.getId(), productId);
+        Cart existing = cartRepo.findByUserIdAndProductId(user.getId(), productId);
 
         if (existing != null) {
             existing.setQuantity(existing.getQuantity() + quantity);
@@ -52,7 +46,6 @@ public class CartService {
         return cartRepo.save(cart);
     }
 
-    
     public List<Cart> getUserCart(User user) {
         return cartRepo.findByUser(user);
     }
